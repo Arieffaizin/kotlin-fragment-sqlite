@@ -4,8 +4,9 @@ import com.google.gson.Gson
 import com.riefzin.android.learnkotlin05.api.ApiRepository
 import com.riefzin.android.learnkotlin05.api.TheSportDBApi
 import com.riefzin.android.learnkotlin05.model.TeamResponse
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
+import org.jetbrains.anko.coroutines.experimental.bg
 
 // 10.Create Presenter MVP
 class TeamsPresenter(
@@ -15,16 +16,27 @@ class TeamsPresenter(
 
     fun getTeamList(league: String?) {
         view.showLoading()
-        doAsync {
-            val data = gson.fromJson(apiRepository
-                    .doRequest(TheSportDBApi.getTeams(league)),
-                    TeamResponse::class.java
-            )
 
-            uiThread {
-                view.hideLoading()
-                view.showTeamList(data.teams)
+        // Added Anko Coroutines
+        async(UI){
+            val data = bg {
+                gson.fromJson(apiRepository
+                        .doRequest(TheSportDBApi.getTeams(league)),
+                        TeamResponse::class.java)
             }
+            view.showTeamList(data.await().teams)
+            view.hideLoading()
         }
+//        doAsync {
+//            val data = gson.fromJson(apiRepository
+//                    .doRequest(TheSportDBApi.getTeams(league)),
+//                    TeamResponse::class.java
+//            )
+//
+//            uiThread {
+//                view.hideLoading()
+//                view.showTeamList(data.teams)
+//            }
+//        }
     }
 }
